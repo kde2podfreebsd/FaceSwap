@@ -2,6 +2,7 @@ import os
 import cv2
 import insightface
 from insightface.app import FaceAnalysis
+from Telegram.Config import basedir
 
 
 class NoFaceDetectedError(Exception):
@@ -12,16 +13,14 @@ class NoFaceDetectedError(Exception):
 
 
 class FaceSwapper(object):
-    app: FaceAnalysis
-    swapper: insightface.model_zoo
+    app: FaceAnalysis = FaceAnalysis(name='buffalo_l')
+    app.prepare(ctx_id=0, det_size=(640, 640))
+    onnx_path = os.path.join(basedir, 'FaceSwap', 'inswapper_128.onnx')
+    swapper: insightface.model_zoo = insightface.model_zoo.get_model(onnx_path, download=True, download_zip=True)
 
     def __init__(self):
         """Initialize the FaceSwapper."""
         assert insightface.__version__ >= '0.7'
-
-        self.app = FaceAnalysis(name='buffalo_l')
-        self.app.prepare(ctx_id=0, det_size=(640, 640))
-        self.swapper = insightface.model_zoo.get_model('inswapper_128.onnx', download=True, download_zip=True)
 
     def detect_faces(self, path_to_image: str):
         """Detect faces in the image.
@@ -77,7 +76,7 @@ class FaceSwapper(object):
             user_id: A string representing the user ID.
             target_face_image_path: A string representing the path to the target face image.
         """
-        output_folder = f"outputs/{user_id}"
+        output_folder = os.path.join(basedir, 'FaceSwap', 'outputs', str(user_id))
 
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
@@ -86,7 +85,7 @@ class FaceSwapper(object):
             for f in file_list:
                 os.remove(f)
 
-        templates_folder = "templates"
+        templates_folder = os.path.join(basedir, 'FaceSwap', 'templates')
         templates = os.listdir(templates_folder)
 
         for template in templates:
@@ -95,6 +94,5 @@ class FaceSwapper(object):
             self.face_swap(target_face_image_path, template_path, user_id, output_folder)
 
 
-if __name__ == '__main__':
-    f = FaceSwapper()
-    f.create_mempack('dasha', 'pic5.jpg')
+# f = FaceSwapper()
+# f.create_mempack("123", "users_images/406149871.jpg")

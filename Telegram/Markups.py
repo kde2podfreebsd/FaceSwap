@@ -46,9 +46,10 @@ class TextBuilder(object):
         return cls._subscribe_text
 
     @classmethod
-    def await_image_generating(cls) -> str:
-        cls._await_image_generating_text = '''
+    def await_image_generating(cls, position) -> str:
+        cls._await_image_generating_text = f'''
 Магия происходит, скоро все случится ✨
+Ваша позиция {position} в очереди.
 Как только все будет готово, мы пришлем уведомление. А пока можно заварить чай и отдохнуть 🙈
 '''
         return cls._await_image_generating_text

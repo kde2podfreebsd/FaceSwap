@@ -46,7 +46,3 @@ class ImageResizer(object):
                 print(f"Error processing image {image_file}: {e}")
                 continue
 
-
-if __name__ == "__main__":
-    folder_path = 'outputs/123/'
-    prepare_images(folder_path)
