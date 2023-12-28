@@ -7,11 +7,14 @@ class AdminController:
         self.cursor = self.conn.cursor()
         self.create_admin_table()
         self.create_channel_table()
+        self.channel_storage = dict()
+        self.admin_storage = dict()
 
     def create_admin_table(self):
         try:
             self.cursor.execute('''CREATE TABLE IF NOT EXISTS admins (
-                                user_id INTEGER PRIMARY KEY
+                                user_id INTEGER PRIMARY KEY,
+                                username TEXT
                                 )''')
             self.conn.commit()
         except sqlite3.Error as e:
@@ -27,9 +30,9 @@ class AdminController:
         except sqlite3.Error as e:
             print(f"Error creating channels table: {e}")
 
-    def add_admin(self, user_id):
+    def add_admin(self, user_id, username):
         try:
-            self.cursor.execute("INSERT INTO admins (user_id) VALUES (?)", (user_id,))
+            self.cursor.execute("INSERT INTO admins (user_id, username) VALUES (?, ?)", (user_id, username))
             self.conn.commit()
         except sqlite3.Error as e:
             print(f"Error adding admin: {e}")
@@ -48,6 +51,15 @@ class AdminController:
         except sqlite3.Error as e:
             print(f"Error checking admin status: {e}")
             return False
+
+    def get_all_admins(self):
+        try:
+            self.cursor.execute("SELECT * FROM admins")
+            admins = self.cursor.fetchall()
+            return admins
+        except sqlite3.Error as e:
+            print(f"Error retrieving admins: {e}")
+            return []
 
     def add_channel(self, channel_name, channel_link):
         try:
@@ -84,5 +96,7 @@ class AdminController:
             print(f"Error retrieving channels: {e}")
             return []
 
+
     def __del__(self):
         self.conn.close()
+

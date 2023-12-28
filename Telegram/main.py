@@ -10,18 +10,16 @@ from AntifloodMiddleware import SimpleMiddleware
 from Telegram.AdminController import AdminController
 
 
-msgController = MsgMiddleware()
+msgController: MsgMiddleware = MsgMiddleware()
 bot.setup_middleware(SimpleMiddleware(2))
-queue_system = queue.Queue()
-processing = False
-db_path = 'cache.db'
-admin_controller = AdminController(db_path)
-# admin_controller.add_channel(channel_name='@abobaabobaabobaaboba1488', channel_link='https://t.me/+enenh6Q8DmNmZDIy')
-# @abobaabobaabobaaboba1488
-# @geeksflow
+queue_system: queue.Queue = queue.Queue()
+processing: bool = False
+db_path: str = 'cache.db'
+admin_controller: AdminController = AdminController(db_path)
+# admin_controller.add_admin(user_id=406149871, username="@donqhomo")
 
 
-@bot.message_handler(commands=["start"])
+@bot.message_handler(commands=["start", "home"])
 def send_welcome(message: types.Message) -> None:
     bot.send_message(
         chat_id=message.chat.id,
@@ -29,6 +27,193 @@ def send_welcome(message: types.Message) -> None:
             message.chat.first_name if message.chat.first_name is not None else message.chat.username
         )),
         reply_markup=None,
+        parse_mode="html",
+    )
+
+
+@bot.message_handler(commands=["admin"])
+def admin(message: types.Message) -> None:
+    if admin_controller.is_admin(message.chat.id):
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=MarkupBuilder.admin_panel(),
+            reply_markup=MarkupBuilder.admin_menu(),
+            parse_mode="html",
+        )
+    else:
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=MarkupBuilder.not_authenticated(),
+            reply_markup=None,
+            parse_mode="html",
+        )
+
+
+@bot.message_handler(content_types=['text'])
+def text_handler(message: types.Message) -> None:
+
+    if message.text == 'Показать пул каналов рекламы':
+        channels = admin_controller.get_all_channels()
+        if len(channels) == 0:
+            bot.send_message(
+                chat_id=message.chat.id,
+                text="Нет каналов для рекламы",
+                reply_markup=MarkupBuilder.admin_menu(),
+                parse_mode="html",
+            )
+            return
+
+        text = ''
+        for idx, channel in enumerate(channels):
+            text += f"{idx+1}. Channel: {channel[0]}\nChannel link: {channel[1]}\n\n"
+
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=text,
+            reply_markup=MarkupBuilder.admin_menu(),
+            parse_mode="html",
+        )
+
+    elif message.text == 'Добавить канал в пул рекламы':
+        msg = bot.send_message(
+            chat_id=message.chat.id,
+            text="Отправьте @username канала",
+            reply_markup=MarkupBuilder.hide_reply_markup,
+            parse_mode="html",
+        )
+        bot.register_next_step_handler(msg, _add_channel_step2)
+
+    elif message.text == 'Удалить канал из пула реклам':
+        msg = bot.send_message(
+            chat_id=message.chat.id,
+            text="Отправьте @username канала",
+            reply_markup=MarkupBuilder.hide_reply_markup,
+            parse_mode="html",
+        )
+        bot.register_next_step_handler(msg, _delete_channel_step2)
+
+    elif message.text == 'Список админов':
+        admins = admin_controller.get_all_admins()
+        if len(admins) == 0:
+            bot.send_message(
+                chat_id=message.chat.id,
+                text="Нет админов",
+                reply_markup=MarkupBuilder.admin_menu(),
+                parse_mode="html",
+            )
+            return
+
+        text = ''
+        for idx, admin in enumerate(admins):
+            text += f"{idx+1}. Admin id: {admin[0]}\nAdmin username: {admin[1]}\n\n"
+
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=text,
+            reply_markup=MarkupBuilder.admin_menu(),
+            parse_mode="html",
+        )
+
+    elif message.text == 'Добавить админа':
+        msg = bot.send_message(
+            chat_id=message.chat.id,
+            text="Отправьте @username админа",
+            reply_markup=MarkupBuilder.hide_reply_markup,
+            parse_mode="html",
+        )
+        bot.register_next_step_handler(msg, _add_admin_step2)
+
+    elif message.text == 'Удалить админа':
+        msg = bot.send_message(
+            chat_id=message.chat.id,
+            text="Отправьте chat_id админа",
+            reply_markup=MarkupBuilder.hide_reply_markup,
+            parse_mode="html",
+        )
+        bot.register_next_step_handler(msg, _delete_admin_step2)
+
+
+def _delete_admin_step2(message):
+    chat_id = message.text
+    admin_controller.remove_admin(user_id=chat_id)
+
+    bot.send_message(
+        chat_id=message.chat.id,
+        text=f"{chat_id} успешно удален из админов",
+        reply_markup=MarkupBuilder.admin_menu(),
+        parse_mode="html",
+    )
+
+
+def _add_admin_step2(message):
+    user_id = message.text
+    if admin_controller.is_admin(user_id):
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=f"Админ с user_id {user_id} уже существует.",
+            reply_markup=MarkupBuilder.admin_menu(),
+            parse_mode="html",
+        )
+    else:
+        admin_controller.admin_storage[message.chat.id] = user_id
+        msg = bot.send_message(
+            chat_id=message.chat.id,
+            text="Отправьте @username админа",
+            reply_markup=MarkupBuilder.hide_reply_markup,
+            parse_mode="html",
+        )
+        bot.register_next_step_handler(msg, _add_admin_step3)
+
+
+def _add_admin_step3(message):
+    username = admin_controller.admin_storage[message.chat.id]
+    chat_id = message.text
+
+    admin_controller.add_admin(user_id=chat_id, username=username)
+
+    bot.send_message(
+        chat_id=message.chat.id,
+        text=f"Админ {username} успешно добавлен",
+        reply_markup=MarkupBuilder.admin_menu(),
+        parse_mode="html",
+    )
+
+
+def _add_channel_step2(message):
+    admin_controller.channel_storage[message.chat.id] = message.text
+
+    msg = bot.send_message(
+        chat_id=message.chat.id,
+        text="Отправьте ссылку на канал",
+        reply_markup=MarkupBuilder.hide_reply_markup,
+        parse_mode="html",
+    )
+    bot.register_next_step_handler(msg, _add_channel_step3)
+
+
+def _add_channel_step3(message):
+    channel = admin_controller.channel_storage.get(message.chat.id)
+    channel_link = message.text
+
+    admin_controller.add_channel(channel_name=channel, channel_link=channel_link)
+
+    bot.send_message(
+        chat_id=message.chat.id,
+        text=f"Канал {channel} успешно добавлен",
+        reply_markup=MarkupBuilder.admin_menu(),
+        parse_mode="html",
+    )
+
+
+def _delete_channel_step2(message):
+    channel_to_delete = message.text
+
+    admin_controller.remove_channel(channel_name=channel_to_delete)
+
+    bot.send_message(
+        chat_id=message.chat.id,
+        text="Канал успешно удален из рекламного пула",
+        reply_markup=MarkupBuilder.admin_menu(),
         parse_mode="html",
     )
 
@@ -43,7 +228,6 @@ def send_welcome(message: types.Message) -> None:
         'location',
         'poll',
         'sticker',
-        'text',
         'venue',
         'video',
         'video_note',
@@ -74,14 +258,19 @@ def _subbed(chat_id: int | str) -> None:
 
 def process_queue():
     global processing
+
     if not processing and not queue_system.empty():
         next_user = queue_system.get()
         processing = True
+
         f = FaceSwapper()
         imgCtr = ImageController()
+
         target_path = imgCtr.get_target_path(next_user)
         if target_path is None:
+
             msgController.delete_message_id(user_id=next_user)
+
             bot.send_message(
                 chat_id=next_user,
                 text=MarkupBuilder.state_cache_error(),
@@ -89,10 +278,12 @@ def process_queue():
                 disable_web_page_preview=False
             )
             return
+
         try:
             f.create_mempack(user_id=next_user, target_face_image_path=target_path)
         except NoFaceDetectedError:
             msgController.delete_message_id(user_id=next_user)
+
             bot.send_message(
                 chat_id=next_user,
                 text=MarkupBuilder.no_face_detected_error(),
@@ -101,7 +292,7 @@ def process_queue():
             )
             return
 
-        file_paths = imgCtr.get_output_paths(next_user)[:10]  # Получаем пути к первым 10 файлам
+        file_paths = imgCtr.get_output_paths(next_user)[:10]
         media = []
 
         for file_path in file_paths:
@@ -111,6 +302,13 @@ def process_queue():
 
         msgController.delete_message_id(user_id=next_user)
         bot.send_media_group(next_user, media)
+        bot.send_message(
+            chat_id=next_user,
+            text=MarkupBuilder.stickerset_ready_text(),
+            reply_markup=MarkupBuilder.stickerset_ready_markup(),
+            parse_mode="HTML",
+            disable_web_page_preview=False
+        )
     else:
         processing = False
 
@@ -137,6 +335,9 @@ def _go_subscribe(chat_id: int | str, channel_username: str = None, channel_href
     target_channel = None
     if channel_username or channel_href is None:
         all_channels = admin_controller.get_all_channels()
+        if len(all_channels) == 0:
+            _subbed(chat_id=chat_id)
+            return
         for channel in all_channels:
             is_member = bot.get_chat_member(channel[0], chat_id)
             if is_member.status == 'left':
@@ -175,6 +376,16 @@ def callback_handler(call):
 
         _go_subscribe(user_id, channel_username=channel, channel_href=channel_link)
         process_queue()
+
+    elif call.data == 'again':
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text=MarkupBuilder.start_message(first_name=(
+                call.message.chat.first_name if call.message.chat.first_name is not None else call.message.chat.username
+            )),
+            reply_markup=None,
+            parse_mode="html",
+        )
 
 
 if __name__ == "__main__":

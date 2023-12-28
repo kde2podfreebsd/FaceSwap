@@ -96,6 +96,3 @@ class FaceSwapper(object):
             except NoFaceDetectedError:
                 raise NoFaceDetectedError(f"No faces detected on the image for user: {user_id}")
 
-
-# f = FaceSwapper()
-# f.create_mempack("123", "users_images/406149871.jpg")

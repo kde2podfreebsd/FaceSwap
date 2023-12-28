@@ -5,6 +5,9 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 class TextBuilder(object):
 
+    _stickerset_ready = None
+    _admin_panel = None
+    _not_authenticated = None
     _state_cache_error = None
     _no_face_detected_error = None
     _await_image_generating_text = None
@@ -65,6 +68,23 @@ class TextBuilder(object):
     def state_cache_error(cls):
         cls._state_cache_error = "🤔 Какая-то ошибка(( Отправьте фото еще раз или попробуйте позже"
         return cls._state_cache_error
+
+    @classmethod
+    def not_authenticated(cls):
+        cls._not_authenticated = "not authenticated"
+        return cls._not_authenticated
+
+    @classmethod
+    def admin_panel(cls):
+        cls._admin_panel = "Привет, Босс\n<b>[admin panel]</b>"
+        return cls._admin_panel
+
+    @classmethod
+    def stickerset_ready_text(cls):
+        cls._stickerset_ready = '''
+Готово! Чтобы добавить стикерпак, нажмите на стикер выше или по ссылке. А еще ботом нужно <a href="https://t.me/share/url?url=https://t.me/https://t.me/FaceSwap_Meme_Bot">поделиться</a> с друзьями 🙌
+'''
+        return cls._stickerset_ready
         
 
 class MarkupBuilder(TextBuilder):
@@ -97,7 +117,47 @@ class MarkupBuilder(TextBuilder):
             ]
         )
 
+    @classmethod
+    def stickerset_ready_markup(cls) -> types.InlineKeyboardMarkup:
+        return types.InlineKeyboardMarkup(
+            row_width=1,
+            keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text="Стикер-пак",
+                        url="google.com",
+                    )
+                ],
+                [
+                    types.InlineKeyboardButton(
+                        text="Поделиться с друзьями!",
+                        url="https://t.me/share/url?url=https://t.me/https://t.me/FaceSwap_Meme_Bot",
+                    )
+                ],
+                [
+                    types.InlineKeyboardButton(
+                        text="Попробовать еще раз?",
+                        callback_data="again",
+                    )
+                ]
+            ]
+        )
 
-
-
+    @classmethod
+    def admin_menu(cls):
+        menu: ReplyKeyboardMarkup = types.ReplyKeyboardMarkup(
+            row_width=1,
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        ).add(
+            types.KeyboardButton("Показать пул каналов рекламы"),
+            types.KeyboardButton("Добавить канал в пул рекламы"),
+            types.KeyboardButton("Удалить канал из пула реклам"),
+            types.KeyboardButton("Список админов"),
+            types.KeyboardButton("Добавить админа"),
+            types.KeyboardButton("Удалить админа"),
+            types.KeyboardButton("Логи"),
+            types.KeyboardButton("/home"),
+        )
+        return menu
 
