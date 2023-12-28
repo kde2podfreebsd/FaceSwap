@@ -5,6 +5,8 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 class TextBuilder(object):
 
+    _state_cache_error = None
+    _no_face_detected_error = None
     _await_image_generating_text = None
     _subscribe_text = None
     _сant_processed_text = None
@@ -53,6 +55,16 @@ class TextBuilder(object):
 Как только все будет готово, мы пришлем уведомление. А пока можно заварить чай и отдохнуть 🙈
 '''
         return cls._await_image_generating_text
+
+    @classmethod
+    def no_face_detected_error(cls):
+        cls._no_face_detected_error = "🤔 На изображении не распознано лиц, попробуйте отправить другое фото"
+        return cls._no_face_detected_error
+
+    @classmethod
+    def state_cache_error(cls):
+        cls._state_cache_error = "🤔 Какая-то ошибка(( Отправьте фото еще раз или попробуйте позже"
+        return cls._state_cache_error
         
 
 class MarkupBuilder(TextBuilder):

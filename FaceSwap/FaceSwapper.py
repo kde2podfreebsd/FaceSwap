@@ -91,7 +91,10 @@ class FaceSwapper(object):
         for template in templates:
             template_path = os.path.join(templates_folder, template)
             print(template_path)
-            self.face_swap(target_face_image_path, template_path, user_id, output_folder)
+            try:
+                self.face_swap(target_face_image_path, template_path, user_id, output_folder)
+            except NoFaceDetectedError:
+                raise NoFaceDetectedError(f"No faces detected on the image for user: {user_id}")
 
 
 # f = FaceSwapper()
