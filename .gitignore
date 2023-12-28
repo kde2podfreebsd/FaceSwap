@@ -1,8 +1,3 @@
-# Images
-FaceSwap/outputs/*
-FaceSwap/templates/*
-FaceSwap/users_images/*
-
 # pre-trained_model
 FaceSwap/inswapper_128.onnx
 
