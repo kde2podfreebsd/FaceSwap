@@ -14,7 +14,7 @@ class SimpleMiddleware(BaseMiddleware):
             self.last_time[message.from_user.id] = message.date
             return
         if message.date - self.last_time[message.from_user.id] < self.limit:
-            bot.send_message(message.chat.id, '❌ Вы делаете запросы слишком часто - необходимо подождать 2 секунд после отправки предыдущего запроса.')
+            bot.send_message(message.chat.id, f'❌ Вы делаете запросы слишком часто - необходимо подождать {message.date - self.last_time[message.from_user.id]} секунд после отправки предыдущего запроса.')
             return CancelUpdate()
         self.last_time[message.from_user.id] = message.date
 

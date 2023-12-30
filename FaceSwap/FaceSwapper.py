@@ -77,17 +77,25 @@ class FaceSwapper(object):
             target_face_image_path: A string representing the path to the target face image.
         """
         output_folder = os.path.join(basedir, 'FaceSwap', 'outputs', str(user_id))
-
+        print("1")
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
         else:
-            file_list = [os.path.join(output_folder, f) for f in os.listdir(output_folder)]
+            file_list = [os.path.join(output_folder, f) for f in os.listdir(output_folder) if
+                         os.path.isfile(os.path.join(output_folder, f))]
+            for f in file_list:
+                os.remove(f)
+
+            folder_path = os.path.join(output_folder, 'prepared_images')
+
+            file_list = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if
+                         os.path.isfile(os.path.join(folder_path, f))]
+
             for f in file_list:
                 os.remove(f)
 
         templates_folder = os.path.join(basedir, 'FaceSwap', 'templates')
         templates = os.listdir(templates_folder)
-
         for template in templates:
             template_path = os.path.join(templates_folder, template)
             print(template_path)

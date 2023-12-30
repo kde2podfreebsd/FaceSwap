@@ -7,16 +7,22 @@ from FaceSwap.FaceSwapper import NoFaceDetectedError
 from Telegram.Config import bot
 from MessageController import MsgMiddleware
 from AntifloodMiddleware import SimpleMiddleware
-from Telegram.AdminController import AdminController
+from Telegram.AdminControllerDB import AdminController
+from Telegram.StickerMiddleware import StickerPackMiddleware
+import random
+from FaceSwap.ImagePreparing import ImageResizer
+import os
+from Telegram.Config import basedir
 
-
+img_res: ImageResizer = ImageResizer()
 msgController: MsgMiddleware = MsgMiddleware()
+spm: StickerPackMiddleware = StickerPackMiddleware()
 bot.setup_middleware(SimpleMiddleware(2))
 queue_system: queue.Queue = queue.Queue()
 processing: bool = False
 db_path: str = 'cache.db'
 admin_controller: AdminController = AdminController(db_path)
-# admin_controller.add_admin(user_id=406149871, username="@donqhomo")
+admin_controller.add_admin(user_id=406149871, username="@donqhomo")
 
 
 @bot.message_handler(commands=["start", "home"])
@@ -26,7 +32,7 @@ def send_welcome(message: types.Message) -> None:
         text=MarkupBuilder.start_message(first_name=(
             message.chat.first_name if message.chat.first_name is not None else message.chat.username
         )),
-        reply_markup=None,
+        reply_markup=MarkupBuilder.hide_reply_markup,
         parse_mode="html",
     )
 
@@ -280,7 +286,28 @@ def process_queue():
             return
 
         try:
+            name = f"meme_{next_user}_{str(random.randint(100000, 999999))}_by_FaceSwap_Meme_Bot"
+            print(target_path)
             f.create_mempack(user_id=next_user, target_face_image_path=target_path)
+            img_res.prepare_images(
+                folder_path=os.path.join(
+                    basedir,
+                    'FaceSwap',
+                    'outputs',
+                    str(next_user)
+                )
+            )
+
+            spm.create_sticker_pack(
+                user_id=next_user,
+                name=name,
+                title="Face Meme Swap @donqhomo"
+            )
+            sticker_pack = spm.getStickerSet(sticker_pack_name=name)
+            sticker_pack_name = f"t.me/addstickers/{name}"
+            first_sticker_file_id = sticker_pack['result']['stickers'][0]['file_id']
+            bot.send_sticker(next_user, first_sticker_file_id)
+
         except NoFaceDetectedError:
             msgController.delete_message_id(user_id=next_user)
 
@@ -292,20 +319,12 @@ def process_queue():
             )
             return
 
-        file_paths = imgCtr.get_output_paths(next_user)[:10]
-        media = []
-
-        for file_path in file_paths:
-            with open(file_path, 'rb') as file:
-                file_data = file.read()
-                media.append(types.InputMediaPhoto(media=file_data))
-
         msgController.delete_message_id(user_id=next_user)
-        bot.send_media_group(next_user, media)
+
         bot.send_message(
             chat_id=next_user,
             text=MarkupBuilder.stickerset_ready_text(),
-            reply_markup=MarkupBuilder.stickerset_ready_markup(),
+            reply_markup=MarkupBuilder.stickerset_ready_markup(sticker_pack_url=sticker_pack_name),
             parse_mode="HTML",
             disable_web_page_preview=False
         )

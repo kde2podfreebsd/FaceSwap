@@ -118,14 +118,14 @@ class MarkupBuilder(TextBuilder):
         )
 
     @classmethod
-    def stickerset_ready_markup(cls) -> types.InlineKeyboardMarkup:
+    def stickerset_ready_markup(cls, sticker_pack_url: str) -> types.InlineKeyboardMarkup:
         return types.InlineKeyboardMarkup(
             row_width=1,
             keyboard=[
                 [
                     types.InlineKeyboardButton(
                         text="Стикер-пак",
-                        url="google.com",
+                        url=sticker_pack_url,
                     )
                 ],
                 [

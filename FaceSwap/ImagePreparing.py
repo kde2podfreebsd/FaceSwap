@@ -3,7 +3,7 @@ from PIL import Image
 
 
 class ImageResizer(object):
-    def prepare_images(folder_path):
+    def prepare_images(self, folder_path):
         new_folder_path = os.path.join(folder_path, 'prepared_images')
         if not os.path.exists(new_folder_path):
             os.makedirs(new_folder_path)
