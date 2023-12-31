@@ -138,6 +138,63 @@ def text_handler(message: types.Message) -> None:
         )
         bot.register_next_step_handler(msg, _delete_admin_step2)
 
+    elif message.text == 'Показать шаблоны':
+        def send_media_in_batches(chat_id, media, batch_size):
+            for i in range(0, len(media), batch_size):
+                bot.send_media_group(chat_id, media[i:i + batch_size])
+
+        file_paths = os.path.join(basedir, 'FaceSwap', 'templates')
+
+        media = []
+        text = ''
+        for file_path in os.listdir(file_paths):
+            with open(os.path.join(file_paths, file_path), 'rb') as file:
+                text += f'{file_path}\n'
+                file_data = file.read()
+                media.append(types.InputMediaPhoto(media=file_data))
+
+        chat_id = message.chat.id
+
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=text,
+            reply_markup=MarkupBuilder.admin_menu(),
+            parse_mode="html",
+        )
+
+        batch_size = 10
+        send_media_in_batches(chat_id, media, batch_size)
+
+    elif message.text == "Удалить шаблон":
+        msg = bot.send_message(
+            chat_id=message.chat.id,
+            text="Отправь имя файла для удаления",
+            reply_markup=MarkupBuilder.admin_menu(),
+            parse_mode="html",
+        )
+        bot.register_next_step_handler(msg, delete_template)
+
+    elif message.text == 'Добавить шаблон':
+        msg = bot.send_message(
+            chat_id=message.chat.id,
+            text="Отправь шаблон, обязательно должно быть лицо!\nЖелательно: 512*512px .png",
+            reply_markup=MarkupBuilder.admin_menu(),
+            parse_mode="html",
+        )
+
+        bot.register_next_step_handler(msg, image_handler, True)
+
+
+def delete_template(message):
+    os.remove(os.path.join(basedir, 'FaceSwap', 'templates', message.text))
+
+    bot.send_message(
+        chat_id=message.chat.id,
+        text=f"{message.text} успешно удален из шаблонов",
+        reply_markup=MarkupBuilder.admin_menu(),
+        parse_mode="html",
+    )
+
 
 def _delete_admin_step2(message):
     chat_id = message.text
@@ -375,13 +432,28 @@ def _go_subscribe(chat_id: int | str, channel_username: str = None, channel_href
 
 
 @bot.message_handler(content_types=['photo'])
-def image_handler(message: types.Message) -> None:
-    file_info = bot.get_file(message.photo[len(message.photo) - 1].file_id)
-    downloaded_file = bot.download_file(file_info.file_path)
-    imgCtr = ImageController()
-    imgCtr.saveImage(message.chat.id, downloaded_file)
-    _go_subscribe(message.chat.id)
-    process_queue()
+def image_handler(message: types.Message, is_admin_upload=False) -> None:
+
+    if is_admin_upload:
+        file_info = bot.get_file(message.photo[len(message.photo) - 1].file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+        with open(os.path.join(basedir, 'FaceSwap', 'templates', str(file_info.file_path).split('/')[1]), 'wb') as file:
+            file.write(downloaded_file)
+
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=f"{str(file_info.file_path).split('/')[1]} успешно добавлен из шаблонов",
+            reply_markup=MarkupBuilder.admin_menu(),
+            parse_mode="html",
+        )
+
+    else:
+        file_info = bot.get_file(message.photo[len(message.photo) - 1].file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+        imgCtr = ImageController()
+        imgCtr.saveImage(message.chat.id, downloaded_file)
+        _go_subscribe(message.chat.id)
+        process_queue()
 
 
 @bot.callback_query_handler(func=lambda call: True)

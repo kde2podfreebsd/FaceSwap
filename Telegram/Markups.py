@@ -153,10 +153,12 @@ class MarkupBuilder(TextBuilder):
             types.KeyboardButton("Показать пул каналов рекламы"),
             types.KeyboardButton("Добавить канал в пул рекламы"),
             types.KeyboardButton("Удалить канал из пула реклам"),
+            types.KeyboardButton("Показать шаблоны"),
+            types.KeyboardButton("Добавить шаблон"),
+            types.KeyboardButton("Удалить шаблон"),
             types.KeyboardButton("Список админов"),
             types.KeyboardButton("Добавить админа"),
             types.KeyboardButton("Удалить админа"),
-            types.KeyboardButton("Логи"),
             types.KeyboardButton("/home"),
         )
         return menu
