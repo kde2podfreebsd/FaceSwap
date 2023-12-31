@@ -433,7 +433,6 @@ def _go_subscribe(chat_id: int | str, channel_username: str = None, channel_href
 
 @bot.message_handler(content_types=['photo'])
 def image_handler(message: types.Message, is_admin_upload=False) -> None:
-
     if is_admin_upload:
         file_info = bot.get_file(message.photo[len(message.photo) - 1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
